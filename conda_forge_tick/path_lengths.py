@@ -46,28 +46,30 @@ def _visit(graph, node, order):
     order.append(node)
 
 
-def get_longest_paths(graph, source):
-    """Get the length of the longest path to each node from a source node.
+def get_longest_paths(graph, sources):
+    """Get the length of the longest path to each node from a set of source
+    nodes.
 
     Parameters
     ----------
     graph : networkx.classes.digraph.DiGraph
         A directed graph.
-    source : str
-        The name of the source node.
+    sources : list of str
+        The names of the source nodes.
 
     Returns
     -------
     dict
         A dictionary where keys are the names of the nodes in `graph` and
-        values are the lengths of the longest path from `source`.
+        values are the lengths of the longest path from a node in `sources`.
 
     """
 
     dist = {node: -float("inf") for node in graph}
-    dist[source] = 0
+    for source in sources:
+        dist[source] = 0
     visited = []
-    for u in cyclic_topological_sort(graph, [source]):
+    for u in cyclic_topological_sort(graph, sources):
         visited.append(u)
         for v in graph.neighbors(u):
             if v in visited:
@@ -78,32 +80,35 @@ def get_longest_paths(graph, source):
     return dist
 
 
-def get_levels(graph, source):
+def get_levels(graph, sources):
     """Get the nodes in each level of a topological sort of a graph starting
-    from a specified source node.
+    from a set of source nodes.
 
     Parameters
     ----------
     graph : networkx.classes.digraph.DiGraph
         A directed graph.
-    source : str
-        The name of the source node.
+    sources : list of str
+        The names of the source nodes.
 
     Returns
     -------
     dict
         A dictionary where keys are integers and values are the names of the
-        nodes in `graph` with longest path length equal to the key.
+        nodes in `graph` with longest path length to a source node equal to the
+        key.
 
     """
 
     g2 = deepcopy(graph)
-    desc = nx.algorithms.descendants(graph, source)
+    desc = []
+    for source in sources:
+        desc += list(graph.successors(source))
     for node in graph.node:
-        if node not in desc and node != source:
+        if node not in desc and node not in sources:
             g2.remove_node(node)
 
-    dist = get_longest_paths(g2, source)
+    dist = get_longest_paths(g2, sources)
     levels = defaultdict(set)
     for k, v in dist.items():
         levels[v].add(k)
